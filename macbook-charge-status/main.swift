@@ -26,9 +26,11 @@ func getBatteryStatus() -> BatteryStatus? {
 
     guard let statusLine = output.split(separator: "\n").first(where: { $0.contains("InternalBattery") }) else { return nil }
     let statusComponents = statusLine.split(separator: ";").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-    
-    let isCharging = !statusComponents[1].contains("discharging")
-    guard let level = Float(statusComponents[0].trimmingCharacters(in: CharacterSet(charactersIn: "0123456789.").inverted)) else { return nil }
+
+    guard let percentageRange = statusComponents[0].range(of: "\\d+(\\.\\d+)?%", options: .regularExpression),
+          let level = Float(statusComponents[0][percentageRange].trimmingCharacters(in: CharacterSet(charactersIn: "%"))) else { return nil }
+
+    let isCharging = output.contains("AC Power")
 
     return BatteryStatus(isCharging: isCharging, level: level)
 }
@@ -39,4 +41,4 @@ guard let status = getBatteryStatus() else {
 }
 
 print("Battery level: \(status.level)%")
-print("Is charging: \(status.isCharging ? "Yes" : "No")")
+print("Is connected to AC Power: \(status.isCharging ? "Yes" : "No")")
